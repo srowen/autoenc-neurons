@@ -57,8 +57,6 @@ with open('31100.txt', encoding='latin-1') as text_file:
             # record which characters appear in input
             for c in line:
                 seen_chars.add(c)
-            if len(lines) >= 20000:
-                break #TODO remove limit
 # Shuffle input for good measure
 random.shuffle(lines)
 
