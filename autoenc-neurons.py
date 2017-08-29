@@ -57,8 +57,6 @@ with open('31100.txt', encoding='latin-1') as text_file:
             # record which characters appear in input
             for c in line:
                 seen_chars.add(c)
-# Shuffle input for good measure
-random.shuffle(lines)
 
 # Establish character mapping to index and its reverse
 char_to_index = dict(zip(seen_chars, range(0, len(seen_chars))))
@@ -133,18 +131,20 @@ model.compile(optimizer='adadelta',
 model.fit(one_hot, one_hot,
           epochs=20,
           batch_size=64,
+          shuffle=True,
           verbose=2)
 
 lines_to_predict = 5
-# Round-trip encode-decode the first line
-predicted = model.predict(one_hot[:lines_to_predict])
+# Round-trip encode-decode some lines
+first_line = random.randrange(0, len(one_hot) - lines_to_predict)
+predict_range = range(first_line, first_line + lines_to_predict)
+one_hot_to_predict = one_hot[predict_range]
+predicted = model.predict(one_hot_to_predict)
 
 # Examine the activations in the first encoder convolutional layer
 activation_model = Model(inputs=[model.input],
                          outputs=[model.layers[1].output, model.layers[3].output])
-activations = activation_model.predict(one_hot[:lines_to_predict])
-activations_1 = activations[0]
-activations_2 = activations[1]
+(activations_1, activations_2) = activation_model.predict(one_hot_to_predict)
 
 # Find scale of activations
 min_act_1 = np.min(activations_1)
@@ -152,39 +152,39 @@ act_range_1 = np.max(activations_1) - min_act_1
 min_act_2 = np.min(activations_2)
 act_range_2 = np.max(activations_2) - min_act_2
 
-# Number of different activation strengths to display differently
-levels = 5
-# Max activations for each activation strength bucket
-cutoffs_1 = list(map(lambda i: min_act_1 + act_range_1 * (i / (levels - 1)), range(0, levels)))
-cutoffs_2 = list(map(lambda i: min_act_2 + act_range_2 * (i / (levels - 1)), range(0, levels)))
-# Chars to use to render each activation
-display_chars = " .-=*@"
-assert len(display_chars) == levels + 1
 
+from IPython.display import display, HTML
 
-def print_activation(f, cutoffs):
-    for i in range(0, levels):
-        if f <= cutoffs[i]:
-            return display_chars[i]
-    return display_chars[-1]
+def print_activation(letter, act, minact, actrange):
+    max_lum = 240
+    lum = max_lum - int(max_lum * (act - minact) / actrange)
+    return '''<span style="color:rgb({},{},{})">{}</span>'''.format(lum, lum, lum, letter)
+  
+def print_activation_1(l, i, n, line):
+    return print_activation(line[i], activations_1[l, i, n], min_act_1, act_range_1)
 
+def print_activation_2(l, i, n, line):
+    return print_activation(line[i], activations_2[l, i // pool_size, n], min_act_2, act_range_2)
+  
 # How many different neurons/filtering in each conv layer to show
-filters_to_show = 10
-
+filters_to_show = 5
+    
 # Show first conv layer activations
-for l in range(0, lines_to_predict):
-    print(lines[l])
-    for n in range(0, filters_to_show):
-        print(''.join(map(lambda a: print_activation(a, cutoffs_1), activations_1[l,:,n])))
-    print(''.join(map(lambda a: index_to_char.get(a), np.argmax(predicted[l], axis=1))))
+for n in range(0, filters_to_show):
+    for l in predict_range:
+        line = lines[l]
+        marked_up_letters = ''.join(map(lambda i: print_activation_1(l - first_line, i, n, line), range(0, len(line))))
+        display(HTML('''<span style="font-family:monospace">''' + marked_up_letters + '''</span>'''))
     print()
-
+    
 # Show second conv layer activations
-for l in range(0, lines_to_predict):
-    print(lines[l])
-    for n in range(0, filters_to_show):
-        # * pool_size because next conv layer follows downsampling from pool
-        # Each activation is a function of multiple inputs
-        print(''.join(map(lambda a: print_activation(a, cutoffs_2) * pool_size, activations_2[l,:,n])))
-    print(''.join(map(lambda a: index_to_char.get(a), np.argmax(predicted[l], axis=1))))
+for n in range(0, filters_to_show):
+    for l in predict_range:
+        line = lines[l]
+        marked_up_letters = ''.join(map(lambda i: print_activation_2(l - first_line, i, n, line), range(0, len(line))))
+        display(HTML('''<span style="font-family:monospace">''' + marked_up_letters + '''</span>'''))
     print()
+    
+# Print round-trip unencoded text as a sanity check
+for p in predicted:
+    print(''.join(map(lambda a: index_to_char.get(a), np.argmax(p, axis=1))))
