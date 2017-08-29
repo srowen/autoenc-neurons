@@ -19,11 +19,11 @@ max_len = 80
 # 0 for CPU, or 1-2 for GPUs
 gpu_count = 2
 # Dimension of embedding for individual characters in first, last layers
-embedding_dim = 32
+embedding_dim = 40
 # Filter depth of first 1D convolution
-num_filters_1 = 50
+num_filters_1 = 32
 # Filter depth of second 1D convolution
-num_filters_2 = 30
+num_filters_2 = 24
 # Kernel size for all convolutions
 kernel_size = 3
 # Pool size for all pooling
@@ -125,7 +125,7 @@ with tf.device(device2):
 model.summary()
 
 # Compile and fit model
-model.compile(optimizer='adadelta',
+model.compile(optimizer='rmsprop',
               loss='categorical_crossentropy',
               metrics=['acc'])
 
