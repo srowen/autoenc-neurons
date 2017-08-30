@@ -160,26 +160,17 @@ def print_activation(letter, act, minact, actrange):
     return '''<span style="color:rgb({},{},{})">{}</span>'''.format(lum, lum, lum, letter)
 
 
-def print_activation_1(l, i, n, line):
-    return print_activation(line[i], activations_1[l, i, n], min_act_1, act_range_1)
+#def print_activation_1(l, i, n, line):
+#    return print_activation(line[i], activations_1[l, i, n], min_act_1, act_range_1)
 
 
 def print_activation_2(l, i, n, line):
     return print_activation(line[i], activations_2[l, i // pool_size, n], min_act_2, act_range_2)
 
-# How many different neurons/filtering in each conv layer to show
-filters_to_show = 5
-
-# Show first conv layer activations
-for n in range(0, filters_to_show):
-    for l in predict_range:
-        line = lines[l]
-        marked_up_letters = ''.join(map(lambda i: print_activation_1(l - first_line, i, n, line), range(0, len(line))))
-        display(HTML('''<span style="font-family:monospace">''' + marked_up_letters + '''</span>'''))
-    print()
 
 # Show second conv layer activations
-for n in range(0, filters_to_show):
+for n in range(0, num_filters_2):
+    print('Filter {}:'.format(n))
     for l in predict_range:
         line = lines[l]
         marked_up_letters = ''.join(map(lambda i: print_activation_2(l - first_line, i, n, line), range(0, len(line))))
