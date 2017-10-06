@@ -4,12 +4,18 @@
 !pip3 install -U numpy tensorflow-gpu keras
 '''
 
+# Note: run Tensorboard if desired with:
+# tensorboard --port 8080 --logdir=logs
+
 import random
+import os
+import shutil
 
 from IPython.display import display, HTML
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
+from keras.callbacks import TensorBoard
 from keras.layers import Conv1D, Dense, MaxPooling1D, UpSampling1D
 from keras.models import Model, Sequential
 
@@ -129,11 +135,18 @@ model.compile(optimizer='rmsprop',
               loss='categorical_crossentropy',
               metrics=['acc'])
 
+logs_dir='logs'
+if os.path.exists(logs_dir):
+    shutil.rmtree(logs_dir)
+
+tensorboard = TensorBoard(log_dir=logs_dir, write_graph=True)
+
 model.fit(one_hot, one_hot,
-          epochs=20,
+          epochs=10,
           batch_size=64,
           shuffle=True,
-          verbose=2)
+          verbose=2,
+          callbacks=[tensorboard])
 
 lines_to_predict = 5
 # Round-trip encode-decode some lines
