@@ -19,11 +19,18 @@ from keras.callbacks import TensorBoard
 from keras.layers import Conv1D, Dense, MaxPooling1D, UpSampling1D
 from keras.models import Model, Sequential
 
+
+from tensorflow.python.client import device_lib
+def get_available_gpus():
+    local_device_protos = device_lib.list_local_devices()
+    return [x.name for x in local_device_protos if x.device_type == 'GPU']
+
+
 # Cap maximum length of lines, for simplicity. Must be a multiple of pool_size ^ (num pool layers)
 max_len = 80
 
 # 0 for CPU, or 1-2 for GPUs
-gpu_count = 2
+gpu_count = len(get_available_gpus())
 # Dimension of embedding for individual characters in first, last layers
 embedding_dim = 40
 # Filter depth of first 1D convolution
